@@ -9,7 +9,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $sql = "INSERT INTO users (name, email, password, role) VALUES ('$name', '$email', '$password', '$role')";
     if ($conn->query($sql)) {
-        $success_message = "Registration successful! You can now <a href='login.php'>Login</a>";
+        $success_message = "Registration successful! You can now <a href='index.php'>Login</a>";
     } else {
         $error_message = "Error: " . $conn->error;
     }
@@ -27,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body class="bg-light">
     <div class="container d-flex justify-content-center align-items-center vh-100">
         <div class="card p-4 shadow-lg" style="width: 400px;">
-            <h3 class="text-center mb-3">Register</h3>
+            <h3 class="text-center mb-3">Patient Registration</h3>
 
             <?php if (!empty($success_message)) { ?>
                 <div class="alert alert-success"><?php echo $success_message; ?></div>
@@ -53,7 +53,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <button type="submit" class="btn btn-success w-100">Register</button>
             </form>
 
-            <p class="mt-3 text-center">Already have an account? <a href="index.php">Login</a></p>
+            <p class="mt-3 text-center">
+                Already have an account? <a href="index.php">Login</a>
+            </p>
+
+            <p class="mt-2 text-center">
+                Are you a staff member? <a href="staff_register.php" class="text-primary">Register as Staff</a>
+            </p>
+
         </div>
     </div>
 </body>

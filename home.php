@@ -23,7 +23,7 @@ $result = $conn->query($sql);
 <body>
     <nav class="navbar navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="dashboard.php">Patient Dashboard</a>
+            <a class="navbar-brand" href="home.php">Patient Dashboard</a>
             <a class="btn btn-danger" href="logout.php">Logout</a>
         </div>
     </nav>
