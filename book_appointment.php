@@ -7,14 +7,20 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Fetch all registered doctors
+$doctors_sql = "SELECT id, name FROM staff WHERE role = 'Doctor'";
+$doctors_result = $conn->query($doctors_sql);
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $patient_id = $_SESSION['user_id'];
-    $doctor_name = $_POST['doctor_name'];
+    $doctor_id = $_POST['doctor_id']; // Get selected doctor ID
     $appointment_date = $_POST['appointment_date'];
     $appointment_time = $_POST['appointment_time'];
 
-    $sql = "INSERT INTO appointments (patient_id, doctor_name, appointment_date, appointment_time) 
-            VALUES ('$patient_id', '$doctor_name', '$appointment_date', '$appointment_time')";
+    // Insert into appointments table
+    $sql = "INSERT INTO appointments (patient_id, doctor_id, appointment_date, appointment_time) 
+            VALUES ('$patient_id', '$doctor_id', '$appointment_date', '$appointment_time')";
+
     if ($conn->query($sql)) {
         header("Location: home.php");
         exit();
@@ -49,8 +55,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         <form method="post">
             <div class="mb-3">
-                <label class="form-label">Doctor's Name</label>
-                <input type="text" name="doctor_name" class="form-control" required>
+                <label class="form-label">Select Doctor</label>
+                <select name="doctor_id" class="form-control" required>
+                    <option value="">-- Select a Doctor --</option>
+                    <?php while ($doctor = $doctors_result->fetch_assoc()) { ?>
+                        <option value="<?php echo $doctor['id']; ?>"><?php echo $doctor['name']; ?></option>
+                    <?php } ?>
+                </select>
             </div>
             <div class="mb-3">
                 <label class="form-label">Appointment Date</label>
