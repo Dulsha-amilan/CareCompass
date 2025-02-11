@@ -11,9 +11,9 @@ $patient_id = $_SESSION['user_id'];
 $search_query = "";
 
 // Check if a search has been made
-if (isset($_GET['search'])) {
-    $search_term = $_GET['search'];
-    $search_query = " AND (appointments.appointment_date LIKE '%$search_term%' OR staff.name LIKE '%$search_term%' OR appointments.status LIKE '%$search_term%')";
+if (isset($_GET['search']) && !empty($_GET['search'])) {
+    $search_term = trim($_GET['search']);
+    $search_query = " AND (appointments.appointment_date LIKE ? OR staff.name LIKE ? OR appointments.status LIKE ?)";
 }
 
 // Fetch appointments
@@ -24,7 +24,14 @@ $sql = "SELECT appointments.*, staff.name AS doctor_name
         ORDER BY appointments.appointment_date, appointments.appointment_time";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $patient_id);
+
+if (!empty($search_query)) {
+    $search_param = "%$search_term%";
+    $stmt->bind_param("isss", $patient_id, $search_param, $search_param, $search_param);
+} else {
+    $stmt->bind_param("i", $patient_id);
+}
+
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -93,34 +100,32 @@ $lab_reports_result = $stmt2->get_result();
 
     <a href="book_appointment.php" class="btn btn-success">Book New Appointment</a>
 
-    <!-- Lab Reports Section -->
-    <h3 class="text-center mt-5">Your Lab Reports</h3>
-    <table class="table table-bordered mt-3">
-        <thead>
+   <!-- Lab Reports Section -->
+<h3 class="text-center mt-5">Your Lab Reports</h3>
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>Report Name</th>
+            <th>Uploaded Date</th>
+            <th>View</th>
+            <th>Download</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php while ($report = $lab_reports_result->fetch_assoc()) { ?>
             <tr>
-                <th>Report Name</th>
-                <th>Uploaded Date</th>
-                <th>View</th>
-                <th>Download</th>
+                <td><?php echo htmlspecialchars($report['file_name']); ?></td>
+                <td><?php echo htmlspecialchars($report['uploaded_at']); ?></td>
+                <td>
+                    <a href="<?php echo htmlspecialchars($report['report_file']); ?>" target="_blank" class="btn btn-info btn-sm">View</a>
+                </td>
+                <td>
+                    <a href="download.php?file=<?php echo urlencode($report['report_file']); ?>" class="btn btn-primary btn-sm">Download</a>
+                </td>
             </tr>
-        </thead>
-        <tbody>
-            <?php while ($report = $lab_reports_result->fetch_assoc()) { 
-                $file_path = "uploads/" . htmlspecialchars($report['file_path']);
-                ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($report['file_name']); ?></td>
-                    <td><?php echo htmlspecialchars($report['uploaded_at']); ?></td>
-                    <td>
-                        <a href="<?php echo $file_path; ?>" target="_blank" class="btn btn-info btn-sm">View</a>
-                    </td>
-                    <td>
-                        <a href="download.php?file=<?php echo urlencode($report['file_path']); ?>" class="btn btn-primary btn-sm">Download</a>
-                    </td>
-                </tr>
-            <?php } ?>
-        </tbody>
-    </table>
+        <?php } ?>
+    </tbody>
+</table>
 </div>
 </body>
 </html>
