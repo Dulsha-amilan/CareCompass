@@ -15,63 +15,6 @@ $doctor_id = $_SESSION['staff_id'];
 if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
-
-// Fetch patients securely
-$patients_sql = "SELECT * FROM users WHERE role = ?";
-$stmt = $conn->prepare($patients_sql);
-$role = 'Patient';
-$stmt->bind_param("s", $role);
-$stmt->execute();
-$patients_result = $stmt->get_result();
-
-// Fetch appointments for the logged-in doctor
-$appointments_sql = "SELECT appointments.*, users.email, users.name AS patient_name 
-                     FROM appointments 
-                     JOIN users ON appointments.patient_id = users.id 
-                     WHERE appointments.doctor_id = ?";
-$stmt = $conn->prepare($appointments_sql);
-$stmt->bind_param("i", $doctor_id);
-$stmt->execute();
-$appointments_result = $stmt->get_result();
-
-// Handle file upload securely
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['lab_report'])) {
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        die("CSRF validation failed!");
-    }
-
-    $patient_id = $_POST['patient_id'];
-    $original_file_name = $_FILES['lab_report']['name'];
-    $file_tmp = $_FILES['lab_report']['tmp_name'];
-    $file_extension = pathinfo($original_file_name, PATHINFO_EXTENSION);
-    $allowed_extensions = ['pdf', 'jpg', 'png', 'jpeg'];
-    $upload_dir = "uploads/reports/";
-    
-    if (!file_exists($upload_dir)) {
-        mkdir($upload_dir, 0777, true);
-    }
-    
-    if (in_array(strtolower($file_extension), $allowed_extensions)) {
-        $new_file_name = uniqid() . '.' . $file_extension;
-        $file_path = $upload_dir . $new_file_name;
-        
-        if (move_uploaded_file($file_tmp, $file_path)) {
-            $insert_sql = "INSERT INTO lab_reports (patient_id, file_name, report_file) VALUES (?, ?, ?)";
-            $stmt = $conn->prepare($insert_sql);
-            $stmt->bind_param("iss", $patient_id, $original_file_name, $file_path);
-            
-            if ($stmt->execute()) {
-                echo "<script>alert('Report uploaded successfully!');</script>";
-            } else {
-                echo "<script>alert('Error uploading report to database!');</script>";
-            }
-        } else {
-            echo "<script>alert('Error moving uploaded file!');</script>";
-        }
-    } else {
-        echo "<script>alert('Invalid file format! Only PDF, JPG, PNG, and JPEG are allowed.');</script>";
-    }
-}
 ?>
 
 <!DOCTYPE html>
@@ -81,86 +24,214 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['lab_report'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff Dashboard | Care Compass</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/owl-carousel/1.3.3/owl.carousel.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/owl-carousel/1.3.3/owl.carousel.min.js"></script>
+    
+    <style>
+         .banner {
+            width: 100%;
+            background: #f8f9fa;
+        }
+        .banner .item img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+        }
+        .owl-carousel .owl-item {
+            height: 400px;
+        }
+        /* Custom navigation styles */
+        .owl-theme .owl-controls .owl-buttons div {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            padding: 10px;
+            border-radius: 50%;
+        }
+        .owl-theme .owl-controls .owl-buttons .owl-prev {
+            left: 10px;
+        }
+        .owl-theme .owl-controls .owl-buttons .owl-next {
+            right: 10px;
+        }
+        /* Ensure navigation buttons are visible */
+        .owl-theme .owl-controls {
+            margin-top: 0;
+            position: absolute;
+            width: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .nav-link.active {
+            background-color: #0d6efd;
+            color: white !important;
+            border-radius: 5px;
+        }
+        .welcome-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+    </style>
 </head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <h2 class="text-center">Staff Dashboard</h2>
-        <h4>Welcome, <?php echo htmlspecialchars($staff_name); ?> (<?php echo htmlspecialchars($staff_role); ?>)</h4>
-
-        <h4 class="mt-4">Manage Patients</h4>
-        <table class="table table-bordered">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($patient = $patients_result->fetch_assoc()) { ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($patient['id']); ?></td>
-                    <td><?php echo htmlspecialchars($patient['name']); ?></td>
-                    <td><?php echo htmlspecialchars($patient['email']); ?></td>
-                    <td><?php echo htmlspecialchars($patient['phone_number']); ?></td>
-                    <td>
-                        <a href="delete_patient.php?id=<?php echo $patient['id']; ?>" class="btn btn-danger btn-sm">Delete</a>
-                    </td>
-                </tr>
-                <?php } ?>
-            </tbody>
-        </table>
-
-        <h4 class="mt-5">Upload Lab Reports</h4>
-        <form action="" method="post" enctype="multipart/form-data">
-            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-            <div class="mb-3">
-                <label for="patient_id" class="form-label">Select Patient</label>
-                <select name="patient_id" id="patient_id" class="form-control" required>
-                    <?php 
-                    $patients_result->data_seek(0);
-                    while ($patient = $patients_result->fetch_assoc()) { ?>
-                        <option value="<?php echo $patient['id']; ?>"> <?php echo htmlspecialchars($patient['name']); ?> </option>
-                    <?php } ?>
-                </select>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="staff_dashboard.php">Care Compass</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="staff_dashboard.php">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="manage_patients.php">Manage Patients</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="manage_appointments.php">Manage Appointments</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="upload_reports.php">Upload Lab Reports</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="view_reports.php">View Lab Reports</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="about_us1.php">About Us</a>
+                    </li>
+                </ul>
+                <div class="navbar-nav">
+                    <span class="nav-item">
+                        <span class="nav-link text-light">Welcome, <?php echo htmlspecialchars($staff_name); ?></span>
+                    </span>
+                    <span class="nav-item">
+                        <a class="nav-link text-danger" href="staff_logout.php">Logout</a>
+                    </span>
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="lab_report" class="form-label">Upload Report</label>
-                <input type="file" name="lab_report" id="lab_report" class="form-control" required>
+        </div>
+    </nav>
+   
+   <!-- Updated Banner Section -->
+   <div class="banner">
+        <div id="banner-slider" class="owl-carousel owl-theme">
+            <div class="item">
+                <img src="assets/1.png" alt="Banner 1">
             </div>
-            <button type="submit" class="btn btn-primary">Upload</button>
-        </form>
-
-        <h4 class="mt-5">View Lab Reports</h4>
-        <table class="table table-bordered">
-            <thead class="table-dark">
-                <tr>
-                    <th>Patient Name</th>
-                    <th>File Name</th>
-                    <th>Report</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                $reports_sql = "SELECT lab_reports.*, users.name AS patient_name FROM lab_reports JOIN users ON lab_reports.patient_id = users.id";
-                $reports_result = $conn->query($reports_sql);
-                while ($report = $reports_result->fetch_assoc()) { ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($report['patient_name']); ?></td>
-                    <td><?php echo htmlspecialchars($report['file_name']); ?></td>
-                    <td><a href="<?php echo htmlspecialchars($report['report_file']); ?>" target="_blank">View Report</a></td>
-                    <td>
-                        <a href="delete_report.php?id=<?php echo $report['id']; ?>" class="btn btn-danger btn-sm">Delete</a>
-                    </td>
-                </tr>
-                <?php } ?>
-            </tbody>
-        </table>
-        
-        <a href="staff_logout.php" class="btn btn-secondary mt-3">Logout</a>
+            <div class="item">
+                <img src="assets/2.png" alt="Banner 2">
+            </div>
+            <div class="item">
+                <img src="assets/3.png" alt="Banner 3">
+            </div>
+            <div class="item">
+                <img src="assets/4.png" alt="Banner 4">
+            </div>
+        </div>
     </div>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="welcome-section">
+            <h2>Welcome to Staff Dashboard</h2>
+            <p>Role: <?php echo htmlspecialchars($staff_role); ?></p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Manage Patients</h5>
+                        <p class="card-text">View and manage patient information</p>
+                        <a href="manage_patients.php" class="btn btn-primary">Go to Patients</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Manage Appointments</h5>
+                        <p class="card-text">Handle patient appointments</p>
+                        <a href="manage_appointments.php" class="btn btn-primary">Go to Appointments</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Upload Reports</h5>
+                        <p class="card-text">Upload patient lab reports</p>
+                        <a href="upload_reports.php" class="btn btn-primary">Upload Reports</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">View Reports</h5>
+                        <p class="card-text">Access patient lab reports</p>
+                        <a href="view_reports.php" class="btn btn-primary">View Reports</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Highlight active nav item
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPage = window.location.pathname.split('/').pop();
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+        });
+        $(document).ready(function(){
+            $("#banner-slider").owlCarousel({
+                items: 1,
+                itemsDesktop: [1199, 1],
+                itemsDesktopSmall: [979, 1],
+                itemsTablet: [768, 1],
+                itemsMobile: [479, 1],
+                navigation: true,
+                navigationText: ["<i class='fa fa-angle-left'></i>","<i class='fa fa-angle-right'></i>"],
+                pagination: true,
+                autoPlay: true,
+                autoPlayTimeout: 5000,
+                autoPlayHoverPause: true,
+                slideSpeed: 800,
+                paginationSpeed: 800,
+                rewindSpeed: 1000,
+                singleItem: true,
+                transitionStyle: "fade"
+            });
+        });
+
+        // Highlight active nav item code remains the same
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPage = window.location.pathname.split('/').pop();
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
