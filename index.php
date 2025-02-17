@@ -164,7 +164,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             renderer: 'svg',
             loop: true,
             autoplay: true,
-            path: 'assets/Animation - 1739479380501.json'//Animation - 1739477876197
+            path: 'assets/Animation - 1739477876197.json'//Animation - 1739477876197 //Animation - 1739479380501
         });
     </script>
 </body>

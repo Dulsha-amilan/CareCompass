@@ -8,16 +8,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit();
 }
 
-// Fetch patients
-$patients_sql = "SELECT id, email FROM users WHERE role = 'patient'";
-$patients_result = $conn->query($patients_sql);
-
-// Fetch appointments
-$appointments_sql = "SELECT a.id, u.email, a.doctor_name, 
-                     a.appointment_date, a.appointment_time, a.status 
-                     FROM appointments a
-                     JOIN users u ON a.patient_id = u.id";
-$appointments_result = $conn->query($appointments_sql);
+// Fetch summary statistics
+$stats = [
+    'total_patients' => $conn->query("SELECT COUNT(*) as count FROM users WHERE role = 'patient'")->fetch_assoc()['count'],
+    'total_staff' => $conn->query("SELECT COUNT(*) as count FROM staff WHERE role != 'admin'")->fetch_assoc()['count'],
+    'total_appointments' => $conn->query("SELECT COUNT(*) as count FROM appointments")->fetch_assoc()['count'],
+    'pending_appointments' => $conn->query("SELECT COUNT(*) as count FROM appointments WHERE status = 'Pending'")->fetch_assoc()['count']
+];
 ?>
 
 <!DOCTYPE html>
@@ -27,63 +24,103 @@ $appointments_result = $conn->query($appointments_sql);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | Care Compass</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.1/dist/sweetalert2.min.css" rel="stylesheet">
+    <!-- Add Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-    <div class="container mt-4">
-        <h2 class="text-center mb-4">Admin Dashboard</h2>
+    <?php include 'nav.php'; ?>
 
-        <h4>Manage Patients</h4>
-        <table class="table table-bordered mt-3">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Email</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($patient = $patients_result->fetch_assoc()) { ?>
-                <tr>
-                    <td><?php echo $patient['id']; ?></td>
-                    <td><?php echo $patient['email']; ?></td>
-                    <td>
-                        <a href="delete_patient.php?id=<?php echo $patient['id']; ?>" class="btn btn-danger btn-sm">Delete</a>
-                    </td>
-                </tr>
-                <?php } ?>
-            </tbody>
-        </table>
+    <div class="container">
+        <!-- Alert Messages -->
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php 
+                echo $_SESSION['error'];
+                unset($_SESSION['error']);
+                ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
 
-        <h4>Manage Appointments</h4>
-        <table class="table table-bordered mt-3">
-            <thead class="table-dark">
-                <tr>
-                    <th>Patient Email</th>
-                    <th>Doctor</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($appointment = $appointments_result->fetch_assoc()) { ?>
-                <tr>
-                    <td><?php echo $appointment['email']; ?></td>
-                    <td><?php echo $appointment['doctor_name']; ?></td>
-                    <td><?php echo $appointment['appointment_date']; ?></td>
-                    <td><?php echo $appointment['appointment_time']; ?></td>
-                    <td><?php echo $appointment['status']; ?></td>
-                    <td>
-                        <a href="update_appointment.php?id=<?php echo $appointment['id']; ?>&status=Approved" class="btn btn-success btn-sm">Approve</a>
-                        <a href="delete_appointment.php?id=<?php echo $appointment['id']; ?>" class="btn btn-danger btn-sm">Delete</a>
-                    </td>
-                </tr>
-                <?php } ?>
-            </tbody>
-        </table>
+        <?php if (isset($_SESSION['success'])): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php 
+                echo $_SESSION['success'];
+                unset($_SESSION['success']);
+                ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
 
-        <a href="admin_logout.php" class="btn btn-secondary mt-3">Logout</a>
+        <h2 class="text-center mb-4">Welcome to Admin Dashboard</h2>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Patients</h5>
+                        <p class="card-text display-6"><?php echo $stats['total_patients']; ?></p>
+                        <i class="fas fa-users position-absolute top-50 end-0 translate-middle-y opacity-25 fa-2x me-3"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Staff</h5>
+                        <p class="card-text display-6"><?php echo $stats['total_staff']; ?></p>
+                        <i class="fas fa-user-md position-absolute top-50 end-0 translate-middle-y opacity-25 fa-2x me-3"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Appointments</h5>
+                        <p class="card-text display-6"><?php echo $stats['total_appointments']; ?></p>
+                        <i class="fas fa-calendar-check position-absolute top-50 end-0 translate-middle-y opacity-25 fa-2x me-3"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h5 class="card-title">Pending Appointments</h5>
+                        <p class="card-text display-6"><?php echo $stats['pending_appointments']; ?></p>
+                        <i class="fas fa-clock position-absolute top-50 end-0 translate-middle-y opacity-25 fa-2x me-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">Quick Actions</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex gap-2">
+                            <a href="manage_staff.php" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Add New Staff
+                            </a>
+                            <a href="manage_appointments.php" class="btn btn-success">
+                                <i class="fas fa-calendar-plus me-2"></i>View Appointments
+                            </a>
+                            <a href="manage_patients.php" class="btn btn-info">
+                                <i class="fas fa-user-injured me-2"></i>Manage Patients
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.1/dist/sweetalert2.all.min.js"></script>
 </body>
 </html>

@@ -147,7 +147,7 @@ ADD COLUMN notes TEXT;
                             <th>Time</th>
                             <th>Patient</th>
                             <th>Contact</th>
-                            <th>Doctor</th>
+                          
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -162,7 +162,7 @@ ADD COLUMN notes TEXT;
                                 <div>Email: <?php echo htmlspecialchars($appointment['patient_email']); ?></div>
                                 <div>Phone: <?php echo htmlspecialchars($appointment['patient_phone']); ?></div>
                             </td>
-                            <td><?php echo htmlspecialchars($appointment['doctor_name']); ?></td>
+                          
                             <td>
                                 <span class="status-badge status-<?php echo strtolower($appointment['status']); ?>">
                                     <?php echo htmlspecialchars($appointment['status']); ?>

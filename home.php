@@ -156,7 +156,7 @@ $recent_lab_reports = $stmt2->get_result();
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link active" href="home.php">HOME</a>
+                    <a class="nav-link active" href="home.php">Home</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="appointments.php">Appointment</a>

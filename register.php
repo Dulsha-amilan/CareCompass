@@ -128,9 +128,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     Already have an account? <a href="index.php">Login</a>
                 </p>
 
-                <p class="mt-2 text-center">
-                    Are you a staff member? <a href="staff_register.php" class="text-primary">Register as Staff</a>
-                </p>
+                
             </div>
         </div>
     </div>

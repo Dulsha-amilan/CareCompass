@@ -9,17 +9,25 @@ if (!isset($_SESSION['user_id'])) {
 
 $patient_id = $_SESSION['user_id'];
 $search_query = "";
-$search_param = "";
+$search_params = [];
+$param_types = "i"; // Starting with patient_id
 
 // Check if a search has been made
 if (isset($_GET['search']) && !empty($_GET['search'])) {
     $search_term = trim($_GET['search']);
     $search_query = " AND (appointments.appointment_date LIKE ? OR staff.name LIKE ? OR appointments.status LIKE ?)";
-    $search_param = "%$search_term%";
+    $search_params = array_fill(0, 3, "%$search_term%");
+    $param_types .= "sss"; // Add three string parameters for search
 }
 
-// Fetch appointments
-$sql = "SELECT appointments.*, staff.name AS doctor_name 
+// Fetch appointments with doctor information from staff table
+$sql = "SELECT 
+            appointments.id,
+            appointments.appointment_date,
+            appointments.appointment_time,
+            appointments.status,
+            appointments.notes,
+            staff.name AS doctor_name
         FROM appointments 
         JOIN staff ON appointments.doctor_id = staff.id 
         WHERE appointments.patient_id = ?" . $search_query . "
@@ -27,11 +35,9 @@ $sql = "SELECT appointments.*, staff.name AS doctor_name
 
 $stmt = $conn->prepare($sql);
 
-if (!empty($search_query)) {
-    $stmt->bind_param("isss", $patient_id, $search_param, $search_param, $search_param);
-} else {
-    $stmt->bind_param("i", $patient_id);
-}
+// Combine parameters
+$params = array_merge([$patient_id], $search_params);
+$stmt->bind_param($param_types, ...$params);
 
 $stmt->execute();
 $result = $stmt->get_result();
@@ -62,6 +68,12 @@ $result = $stmt->get_result();
             font-size: 22px;
             font-weight: bold;
             color: white !important;
+        }
+        .appointment-notes {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -111,6 +123,7 @@ $result = $stmt->get_result();
                 <th>Date</th>
                 <th>Time</th>
                 <th>Status</th>
+                <th>Notes</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -126,6 +139,11 @@ $result = $stmt->get_result();
                         </span>
                     </td>
                     <td>
+                        <div class="appointment-notes" title="<?php echo htmlspecialchars($row['notes']); ?>">
+                            <?php echo htmlspecialchars($row['notes'] ?? 'No notes'); ?>
+                        </div>
+                    </td>
+                    <td>
                         <?php if ($row['status'] == 'Scheduled') { ?>
                             <a href="cancel_appointment.php?id=<?php echo $row['id']; ?>" 
                                class="btn btn-danger btn-sm"
@@ -134,6 +152,11 @@ $result = $stmt->get_result();
                             </a>
                         <?php } else { echo "N/A"; } ?>
                     </td>
+                </tr>
+            <?php } ?>
+            <?php if ($result->num_rows === 0) { ?>
+                <tr>
+                    <td colspan="6" class="text-center">No appointments found</td>
                 </tr>
             <?php } ?>
         </tbody>
