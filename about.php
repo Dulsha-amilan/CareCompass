@@ -168,13 +168,17 @@ if (!isset($_SESSION['user_id'])) {
                     <p>Patients Served</p>
                 </div>
             </div>
+         
             <div class="col-md-3">
+            <a href="assets\map.png">
                 <div class="stat-card">
                     <i class="fas fa-hospital"></i>
-                    <h3>5</h3>
+                    <h3>3</h3>
                     <p>Locations</p>
                 </div>
+                </a>
             </div>
+    
             <div class="col-md-3">
                 <div class="stat-card">
                     <i class="fas fa-award"></i>
