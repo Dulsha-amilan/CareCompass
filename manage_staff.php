@@ -8,8 +8,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit();
 }
 
-// Fetch staff members
-$staff_sql = "SELECT id, name, email, role, created_at, status FROM staff WHERE role != 'admin' ORDER BY created_at DESC";
+// Fetch staff members with all necessary fields including specialization
+$staff_sql = "SELECT id, name, email, role, specialization, created_at, status FROM staff WHERE role != 'admin' ORDER BY created_at DESC";
 $staff_result = $conn->query($staff_sql);
 ?>
 
@@ -65,6 +65,7 @@ $staff_result = $conn->query($staff_sql);
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Role</th>
+                                <th>Specialization</th>
                                 <th>Status</th>
                                 <th>Join Date</th>
                                 <th>Actions</th>
@@ -83,6 +84,9 @@ $staff_result = $conn->query($staff_sql);
                                     ?>">
                                         <?php echo ucfirst($staff['role']); ?>
                                     </span>
+                                </td>
+                                <td>
+                                    <?php echo htmlspecialchars($staff['specialization']); ?>
                                 </td>
                                 <td>
                                     <span class="badge bg-<?php 
@@ -144,11 +148,24 @@ $staff_result = $conn->query($staff_sql);
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Role</label>
-                            <select class="form-select" name="role" required>
+                            <select class="form-select" name="role" id="role_select" onchange="toggleSpecialization()" required>
                                 <option value="">Select Role</option>
                                 <option value="doctor">Doctor</option>
                                 <option value="nurse">Nurse</option>
                                 <option value="receptionist">Receptionist</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="specialization_div" style="display:none;">
+                            <label class="form-label">Specialization</label>
+                            <select class="form-select" name="specialization" id="specialization_select">
+                                <option value="">Select Specialization</option>
+                                <option value="Cardiologist">Cardiologist</option>
+                                <option value="Neurologist">Neurologist</option>
+                                <option value="Dermatologist">Dermatologist</option>
+                                <option value="Orthopedic Surgeon">Orthopedic Surgeon</option>
+                                <option value="Pediatrician">Pediatrician</option>
+                                <option value="Oncologist">Oncologist</option>
+                                <option value="Endocrinologist">Endocrinologist</option>
                             </select>
                         </div>
                         <button type="submit" class="btn btn-primary">Add Staff</button>
@@ -179,10 +196,23 @@ $staff_result = $conn->query($staff_sql);
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Role</label>
-                            <select class="form-select" name="role" id="edit_role" required>
+                            <select class="form-select" name="role" id="edit_role" onchange="toggleEditSpecialization()" required>
                                 <option value="doctor">Doctor</option>
                                 <option value="nurse">Nurse</option>
                                 <option value="receptionist">Receptionist</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="edit_specialization_div">
+                            <label class="form-label">Specialization</label>
+                            <select class="form-select" name="specialization" id="edit_specialization_select">
+                                <option value="">Select Specialization</option>
+                                <option value="Cardiologist">Cardiologist</option>
+                                <option value="Neurologist">Neurologist</option>
+                                <option value="Dermatologist">Dermatologist</option>
+                                <option value="Orthopedic Surgeon">Orthopedic Surgeon</option>
+                                <option value="Pediatrician">Pediatrician</option>
+                                <option value="Oncologist">Oncologist</option>
+                                <option value="Endocrinologist">Endocrinologist</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -209,9 +239,35 @@ $staff_result = $conn->query($staff_sql);
     <script>
         $(document).ready(function() {
             $('#staffTable').DataTable({
-                order: [[5, 'desc']]
+                order: [[6, 'desc']]
             });
         });
+
+        function toggleSpecialization() {
+            const roleSelect = document.getElementById('role_select');
+            const specializationDiv = document.getElementById('specialization_div');
+            
+            if (roleSelect.value === 'doctor') {
+                specializationDiv.style.display = 'block';
+                document.getElementById('specialization_select').setAttribute('required', 'required');
+            } else {
+                specializationDiv.style.display = 'none';
+                document.getElementById('specialization_select').removeAttribute('required');
+                document.getElementById('specialization_select').value = '';
+            }
+        }
+
+        function toggleEditSpecialization() {
+            const roleSelect = document.getElementById('edit_role');
+            const specializationDiv = document.getElementById('edit_specialization_div');
+            
+            if (roleSelect.value === 'doctor') {
+                specializationDiv.style.display = 'block';
+            } else {
+                specializationDiv.style.display = 'none';
+                document.getElementById('edit_specialization_select').value = '';
+            }
+        }
 
         function editStaff(staff) {
             document.getElementById('edit_staff_id').value = staff.id;
@@ -219,6 +275,18 @@ $staff_result = $conn->query($staff_sql);
             document.getElementById('edit_email').value = staff.email;
             document.getElementById('edit_role').value = staff.role;
             document.getElementById('new_password').value = '';
+            
+            // Handle specialization field
+            const specializationDiv = document.getElementById('edit_specialization_div');
+            const specializationSelect = document.getElementById('edit_specialization_select');
+            
+            if (staff.role === 'doctor') {
+                specializationDiv.style.display = 'block';
+                specializationSelect.value = staff.specialization || '';
+            } else {
+                specializationDiv.style.display = 'none';
+                specializationSelect.value = '';
+            }
             
             new bootstrap.Modal(document.getElementById('editStaffModal')).show();
         }

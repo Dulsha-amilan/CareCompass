@@ -147,6 +147,7 @@ $recent_lab_reports = $stmt2->get_result();
     </style>
 </head>
 <body>
+<!-- This is just the navigation section to be added to home.php -->
 <nav class="navbar navbar-expand-lg navbar-custom">
     <div class="container">
         <a class="navbar-brand" href="home.php">Patient Dashboard</a>
@@ -156,7 +157,7 @@ $recent_lab_reports = $stmt2->get_result();
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link active" href="home.php">Home</a>
+                    <a class="nav-link active" href="home.php">HOME</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="appointments.php">Appointment</a>
@@ -165,7 +166,13 @@ $recent_lab_reports = $stmt2->get_result();
                     <a class="nav-link" href="lab_reports.php">Lab Report</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="payment_history.php">Payment History</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="about.php">About Us</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="submit_feedback.php">Feedback</a>
                 </li>
             </ul>
             <div>
@@ -299,6 +306,7 @@ $recent_lab_reports = $stmt2->get_result();
                 <ul class="footer-links">
                     <li><a href="home.php">Home</a></li>
                     <li><a href="appointments.php">Appointments</a></li>
+                    <li><a href="appoimentcomplited.php">Completed Appointments</a></li>
                     <li><a href="lab_reports.php">Lab Reports</a></li>
                     <li><a href="about.php">About Us</a></li>
                     <li><a href="contact.php">Contact Us</a></li>

@@ -7,9 +7,24 @@ if (!isset($_SESSION['staff_id'])) {
     exit();
 }
 
+$staff_id = $_SESSION['staff_id'];
 $staff_name = $_SESSION['staff_name'];
 $staff_role = $_SESSION['staff_role'] ?? 'Unknown Role';
-$doctor_id = $_SESSION['staff_id'];
+
+// Fetch specialization from database if the role is doctor
+$specialization = '';
+if ($staff_role == 'doctor') {
+    $spec_query = "SELECT specialization FROM staff WHERE id = ?";
+    $stmt = $conn->prepare($spec_query);
+    $stmt->bind_param("i", $staff_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($row = $result->fetch_assoc()) {
+        $specialization = $row['specialization'];
+    }
+    $stmt->close();
+}
 
 // CSRF Token Generation
 if (!isset($_SESSION['csrf_token'])) {
@@ -24,12 +39,13 @@ if (!isset($_SESSION['csrf_token'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff Dashboard | Care Compass</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/owl-carousel/1.3.3/owl.carousel.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/owl-carousel/1.3.3/owl.carousel.min.js"></script>
     
     <style>
-         .banner {
+        .banner {
             width: 100%;
             background: #f8f9fa;
         }
@@ -75,6 +91,26 @@ if (!isset($_SESSION['csrf_token'])) {
             padding: 20px;
             margin-bottom: 20px;
             border-radius: 5px;
+        }
+        .staff-info {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .staff-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            margin-right: 15px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        .role-badge {
+            background-color: #6c757d;
+            color: white;
+        }
+        .specialization-badge {
+            background-color: #17a2b8;
+            color: white;
         }
     </style>
 </head>
@@ -141,7 +177,16 @@ if (!isset($_SESSION['csrf_token'])) {
     <div class="container mt-4">
         <div class="welcome-section">
             <h2>Welcome to Staff Dashboard</h2>
-            <p>Role: <?php echo htmlspecialchars($staff_role); ?></p>
+            <div class="staff-info">
+                <span class="staff-badge role-badge">
+                    <i class="fas fa-user-md me-1"></i> <?php echo htmlspecialchars(ucfirst($staff_role)); ?>
+                </span>
+              <i> <?php echo htmlspecialchars($specialization); ?></i>
+                <span class="staff-badge specialization-badge">
+                    <i class="fas fa-stethoscope me-1"></i> <?php echo htmlspecialchars($specialization); ?>
+                </span>
+               
+            </div>
         </div>
         
         <div class="row">
@@ -189,17 +234,6 @@ if (!isset($_SESSION['csrf_token'])) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Highlight active nav item
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentPage = window.location.pathname.split('/').pop();
-            const navLinks = document.querySelectorAll('.nav-link');
-            
-            navLinks.forEach(link => {
-                if (link.getAttribute('href') === currentPage) {
-                    link.classList.add('active');
-                }
-            });
-        });
         $(document).ready(function(){
             $("#banner-slider").owlCarousel({
                 items: 1,
@@ -221,7 +255,7 @@ if (!isset($_SESSION['csrf_token'])) {
             });
         });
 
-        // Highlight active nav item code remains the same
+        // Highlight active nav item
         document.addEventListener('DOMContentLoaded', function() {
             const currentPage = window.location.pathname.split('/').pop();
             const navLinks = document.querySelectorAll('.nav-link');

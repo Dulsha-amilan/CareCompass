@@ -9,63 +9,53 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Get and sanitize form data
-    $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
-    $name = mysqli_real_escape_string($conn, $_POST['name']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $role = mysqli_real_escape_string($conn, $_POST['role']);
+    $staff_id = $_POST['staff_id'];
+    $name = trim($_POST['name']);
+    $email = trim($_POST['email']);
+    $role = $_POST['role'];
+    $new_password = $_POST['new_password'];
+    $specialization = isset($_POST['specialization']) ? trim($_POST['specialization']) : '';
 
-    // Validate email format
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $_SESSION['error'] = "Invalid email format!";
-        header("Location: admin_dashboard.php");
+    // Validate inputs
+    if (empty($staff_id) || empty($name) || empty($email) || empty($role)) {
+        $_SESSION['error'] = "Required fields cannot be empty.";
+        header("Location: manage_staff.php");
         exit();
     }
 
-    // Check if email exists for other staff members
+    // Check if email already exists (except for the current staff member)
     $check_sql = "SELECT id FROM staff WHERE email = ? AND id != ?";
     $check_stmt = $conn->prepare($check_sql);
     $check_stmt->bind_param("si", $email, $staff_id);
     $check_stmt->execute();
-    $result = $check_stmt->get_result();
+    $check_result = $check_stmt->get_result();
 
-    if ($result->num_rows > 0) {
-        $_SESSION['error'] = "Email already exists for another staff member!";
-    } else {
-        // Check if trying to update an admin account
-        $check_admin_sql = "SELECT role FROM staff WHERE id = ?";
-        $check_admin_stmt = $conn->prepare($check_admin_sql);
-        $check_admin_stmt->bind_param("i", $staff_id);
-        $check_admin_stmt->execute();
-        $admin_result = $check_admin_stmt->get_result();
-        $staff_data = $admin_result->fetch_assoc();
-
-        if ($staff_data && $staff_data['role'] === 'admin') {
-            $_SESSION['error'] = "Cannot modify admin accounts!";
-        } else {
-            // Update staff member
-            $update_sql = "UPDATE staff SET name = ?, email = ?, role = ? WHERE id = ?";
-            $update_stmt = $conn->prepare($update_sql);
-            $update_stmt->bind_param("sssi", $name, $email, $role, $staff_id);
-
-            if ($update_stmt->execute()) {
-                if ($update_stmt->affected_rows > 0) {
-                    $_SESSION['success'] = "Staff member updated successfully!";
-                } else {
-                    $_SESSION['error'] = "No changes were made or staff member not found!";
-                }
-            } else {
-                $_SESSION['error'] = "Error updating staff member: " . $conn->error;
-            }
-            $update_stmt->close();
-        }
-        $check_admin_stmt->close();
+    if ($check_result->num_rows > 0) {
+        $_SESSION['error'] = "Email already exists. Please use a different email.";
+        header("Location: manage_staff.php");
+        exit();
     }
-    $check_stmt->close();
-} else {
-    $_SESSION['error'] = "Invalid request method!";
-}
 
-header("Location: admin_dashboard.php");
-exit();
-?>
+    // Update staff member
+    if (!empty($new_password)) {
+        // Update with new password
+        $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+        $sql = "UPDATE staff SET name = ?, email = ?, password = ?, role = ?, specialization = ? WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("sssssi", $name, $email, $hashed_password, $role, $specialization, $staff_id);
+    } else {
+        // Update without changing password
+        $sql = "UPDATE staff SET name = ?, email = ?, role = ?, specialization = ? WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ssssi", $name, $email, $role, $specialization, $staff_id);
+    }
+    
+    if ($stmt->execute()) {
+        $_SESSION['success'] = "Staff member updated successfully.";
+    } else {
+        $_SESSION['error'] = "Error updating staff member: " . $conn->error;
+    }
+    
+    header("Location: manage_staff.php");
+    exit();
+}

@@ -7,8 +7,8 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Fetch all registered doctors
-$doctors_sql = "SELECT id, name FROM staff WHERE role = 'Doctor'";
+// Fetch all registered doctors with their specializations
+$doctors_sql = "SELECT id, name, specialization FROM staff WHERE role = 'Doctor'";
 $doctors_result = $conn->query($doctors_sql);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -59,7 +59,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <select name="doctor_id" class="form-control" required>
                     <option value="">-- Select a Doctor --</option>
                     <?php while ($doctor = $doctors_result->fetch_assoc()) { ?>
-                        <option value="<?php echo $doctor['id']; ?>"><?php echo $doctor['name']; ?></option>
+                        <option value="<?php echo $doctor['id']; ?>">
+                            Dr. <?php echo $doctor['name']; ?> - <?php echo $doctor['specialization']; ?>
+                        </option>
                     <?php } ?>
                 </select>
             </div>

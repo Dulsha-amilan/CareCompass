@@ -62,13 +62,16 @@ $lab_reports_result = $stmt->get_result();
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="home.php">HOME</a>
+                    <a class="nav-link active" href="home.php">HOME</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="appointments.php">Appointment</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" href="lab_reports.php">Lab Report</a>
+                    <a class="nav-link" href="lab_reports.php">Lab Report</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="payment_history.php">Payment History</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="about.php">About Us</a>

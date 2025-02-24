@@ -102,13 +102,13 @@ if (!isset($_SESSION['user_id'])) {
 <nav class="navbar navbar-expand-lg navbar-custom">
     <div class="container">
         <a class="navbar-brand" href="home.php">Patient Dashboard</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="home.php">HOME</a>
+                    <a class="nav-link active" href="home.php">HOME</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="appointments.php">Appointment</a>
@@ -117,7 +117,10 @@ if (!isset($_SESSION['user_id'])) {
                     <a class="nav-link" href="lab_reports.php">Lab Report</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" href="about.php">About Us</a>
+                    <a class="nav-link" href="payment_history.php">Payment History</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="about.php">About Us</a>
                 </li>
             </ul>
             <div>

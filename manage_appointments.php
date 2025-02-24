@@ -11,24 +11,40 @@ $staff_id = $_SESSION['staff_id'];
 
 // Update appointment status
 if (isset($_POST['update_status']) && isset($_POST['appointment_id'])) {
-    $appointment_id = $_POST['appointment_id'];
+    $appointment_id = intval($_POST['appointment_id']);
     $new_status = $_POST['new_status'];
-    $update_sql = "UPDATE appointments SET status = ? WHERE id = ?";
-    $stmt = $conn->prepare($update_sql);
-    $stmt->bind_param("si", $new_status, $appointment_id);
-    $stmt->execute();
+    
+    // Validate status
+    $valid_statuses = ['Pending', 'Approved', 'Cancelled', 'Completed'];
+    if (in_array($new_status, $valid_statuses)) {
+        $update_sql = "UPDATE appointments SET status = ? WHERE id = ?";
+        $stmt = $conn->prepare($update_sql);
+        $stmt->bind_param("si", $new_status, $appointment_id);
+        
+        if ($stmt->execute()) {
+            // Success message can be set here
+            $_SESSION['message'] = "Appointment status updated successfully.";
+        } else {
+            $_SESSION['error'] = "Failed to update appointment status.";
+        }
+        $stmt->close();
+    }
 }
 
-// Modified SQL query to remove the notes column
+// Modified SQL query to include all required columns
 $appointments_sql = "SELECT 
     a.id,
+    a.patient_id,
     a.appointment_date,
     a.appointment_time,
     a.status,
+    a.created_at,
+    a.doctor_id,
+    a.notes,
+    a.doctor_name,
     p.name AS patient_name,
     p.email AS patient_email,
-    p.phone_number AS patient_phone,
-    a.doctor_name
+    p.phone_number AS patient_phone
     FROM appointments a
     JOIN users p ON a.patient_id = p.id
     ORDER BY a.appointment_date DESC, a.appointment_time ASC";
@@ -85,7 +101,7 @@ ADD COLUMN notes TEXT;
                         <a class="nav-link" href="manage_patients.php">Manage Patients</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="manage_appointments.php">Manage Appointments</a>
+                        <a class="nav-link active" href="manage_appointments.php">Manage Appointments</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="upload_reports.php">Upload Lab Reports</a>
@@ -108,6 +124,27 @@ ADD COLUMN notes TEXT;
 
     <!-- Main Content -->
     <div class="container mt-4">
+        <!-- Display messages if any -->
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php 
+                echo $_SESSION['message']; 
+                unset($_SESSION['message']);
+                ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php 
+                echo $_SESSION['error']; 
+                unset($_SESSION['error']);
+                ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Manage Appointments</h2>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newAppointmentModal">
@@ -147,7 +184,7 @@ ADD COLUMN notes TEXT;
                             <th>Time</th>
                             <th>Patient</th>
                             <th>Contact</th>
-                          
+                            <th>Doctor</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -162,7 +199,7 @@ ADD COLUMN notes TEXT;
                                 <div>Email: <?php echo htmlspecialchars($appointment['patient_email']); ?></div>
                                 <div>Phone: <?php echo htmlspecialchars($appointment['patient_phone']); ?></div>
                             </td>
-                          
+                            <td><?php echo htmlspecialchars($appointment['doctor_name']); ?></td>
                             <td>
                                 <span class="status-badge status-<?php echo strtolower($appointment['status']); ?>">
                                     <?php echo htmlspecialchars($appointment['status']); ?>
@@ -170,11 +207,26 @@ ADD COLUMN notes TEXT;
                             </td>
                             <td>
                                 <div class="btn-group">
-                                    <button class="btn btn-sm btn-success" onclick="updateStatus(<?php echo $appointment['id']; ?>, 'Approved')">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" onclick="updateStatus(<?php echo $appointment['id']; ?>, 'Cancelled')">
-                                        <i class="fas fa-times"></i>
+                                    <!-- Direct submit form for status update -->
+                                    <form method="POST" style="display:inline-block; margin-right: 5px;" onsubmit="return confirm('Are you sure you want to approve this appointment?');">
+                                        <input type="hidden" name="appointment_id" value="<?php echo $appointment['id']; ?>">
+                                        <input type="hidden" name="update_status" value="1">
+                                        <input type="hidden" name="new_status" value="Approved">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                    <form method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to cancel this appointment?');">
+                                        <input type="hidden" name="appointment_id" value="<?php echo $appointment['id']; ?>">
+                                        <input type="hidden" name="update_status" value="1">
+                                        <input type="hidden" name="new_status" value="Cancelled">
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                    <!-- JavaScript approach remains as a backup -->
+                                    <button class="btn btn-sm btn-info ms-1" onclick="updateStatus(<?php echo $appointment['id']; ?>, 'Completed')">
+                                        <i class="fas fa-check-double"></i>
                                     </button>
                                 </div>
                             </td>
@@ -209,12 +261,28 @@ ADD COLUMN notes TEXT;
                             </select>
                         </div>
                         <div class="mb-3">
+                            <label for="doctor" class="form-label">Doctor</label>
+                            <select class="form-select" id="doctor" name="doctor_id">
+                                <?php
+                                $doctors_sql = "SELECT id, name FROM users WHERE role = 'Doctor'";
+                                $doctors_result = $conn->query($doctors_sql);
+                                while ($doctor = $doctors_result->fetch_assoc()) {
+                                    echo "<option value='" . $doctor['id'] . "'>" . htmlspecialchars($doctor['name']) . "</option>";
+                                }
+                                ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
                             <label for="appointmentDate" class="form-label">Date</label>
                             <input type="date" class="form-control" id="appointmentDate" name="appointment_date" required>
                         </div>
                         <div class="mb-3">
                             <label for="appointmentTime" class="form-label">Time</label>
                             <input type="time" class="form-control" id="appointmentTime" name="appointment_time" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary">Schedule Appointment</button>
                     </form>
@@ -257,13 +325,27 @@ ADD COLUMN notes TEXT;
             });
         });
 
+        // Keep the JavaScript function for AJAX updates
         function updateStatus(appointmentId, newStatus) {
-            if (confirm('Are you sure you want to update this appointment status?')) {
-                $.post('update_appointment_status.php', {
-                    appointment_id: appointmentId,
-                    new_status: newStatus
-                }, function(response) {
-                    location.reload();
+            if (confirm('Are you sure you want to update this appointment status to ' + newStatus + '?')) {
+                $.ajax({
+                    url: 'update_appointment_status.php',
+                    type: 'POST',
+                    data: {
+                        appointment_id: appointmentId,
+                        new_status: newStatus
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('Failed to update status: ' + response.error);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert('An error occurred: ' + error);
+                    }
                 });
             }
         }

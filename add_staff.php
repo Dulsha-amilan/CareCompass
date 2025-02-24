@@ -9,47 +9,45 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Get form data
-    $name = mysqli_real_escape_string($conn, $_POST['name']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT); // Hash the password
-    $role = mysqli_real_escape_string($conn, $_POST['role']);
+    $name = trim($_POST['name']);
+    $email = trim($_POST['email']);
+    $password = $_POST['password'];
+    $role = $_POST['role'];
+    $specialization = isset($_POST['specialization']) ? trim($_POST['specialization']) : '';
 
-    // Validate email format
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $_SESSION['error'] = "Invalid email format";
-        header("Location: admin_dashboard.php");
+    // Validate inputs
+    if (empty($name) || empty($email) || empty($password) || empty($role)) {
+        $_SESSION['error'] = "All fields are required.";
+        header("Location: manage_staff.php");
         exit();
     }
 
     // Check if email already exists
-    $check_email = "SELECT id FROM staff WHERE email = ?";
-    $stmt = $conn->prepare($check_email);
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $check_sql = "SELECT id FROM staff WHERE email = ?";
+    $check_stmt = $conn->prepare($check_sql);
+    $check_stmt->bind_param("s", $email);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
 
-    if ($result->num_rows > 0) {
-        $_SESSION['error'] = "Email already exists";
-        header("Location: admin_dashboard.php");
+    if ($check_result->num_rows > 0) {
+        $_SESSION['error'] = "Email already exists. Please use a different email.";
+        header("Location: manage_staff.php");
         exit();
     }
 
-    // Insert new staff member
-    $insert_sql = "INSERT INTO staff (name, email, password, role) VALUES (?, ?, ?, ?)";
-    $stmt = $conn->prepare($insert_sql);
-    $stmt->bind_param("ssss", $name, $email, $password, $role);
-
+    // Add staff member
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    
+    $sql = "INSERT INTO staff (name, email, password, role, specialization, status) VALUES (?, ?, ?, ?, ?, 'active')";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sssss", $name, $email, $hashed_password, $role, $specialization);
+    
     if ($stmt->execute()) {
-        $_SESSION['success'] = "Staff member added successfully";
+        $_SESSION['success'] = "Staff member added successfully.";
     } else {
         $_SESSION['error'] = "Error adding staff member: " . $conn->error;
     }
-
-    $stmt->close();
-} else {
-    $_SESSION['error'] = "Invalid request method";
+    
+    header("Location: manage_staff.php");
+    exit();
 }
-
-header("Location: admin_dashboard.php");
-exit();

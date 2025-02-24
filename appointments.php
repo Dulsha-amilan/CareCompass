@@ -26,7 +26,6 @@ $sql = "SELECT
             appointments.appointment_date,
             appointments.appointment_time,
             appointments.status,
-            appointments.notes,
             staff.name AS doctor_name
         FROM appointments 
         JOIN staff ON appointments.doctor_id = staff.id 
@@ -69,12 +68,6 @@ $result = $stmt->get_result();
             font-weight: bold;
             color: white !important;
         }
-        .appointment-notes {
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
     </style>
 </head>
 <body>
@@ -87,13 +80,16 @@ $result = $stmt->get_result();
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="home.php">HOME</a>
+                    <a class="nav-link active" href="home.php">HOME</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" href="appointments.php">Appointment</a>
+                    <a class="nav-link" href="appointments.php">Appointment</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="lab_reports.php">Lab Report</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="payment_history.php">Payment History</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="about.php">About Us</a>
@@ -123,7 +119,6 @@ $result = $stmt->get_result();
                 <th>Date</th>
                 <th>Time</th>
                 <th>Status</th>
-                <th>Notes</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -139,29 +134,59 @@ $result = $stmt->get_result();
                         </span>
                     </td>
                     <td>
-                        <div class="appointment-notes" title="<?php echo htmlspecialchars($row['notes']); ?>">
-                            <?php echo htmlspecialchars($row['notes'] ?? 'No notes'); ?>
-                        </div>
-                    </td>
-                    <td>
                         <?php if ($row['status'] == 'Scheduled') { ?>
                             <a href="cancel_appointment.php?id=<?php echo $row['id']; ?>" 
-                               class="btn btn-danger btn-sm"
+                               class="btn btn-danger btn-sm me-2"
                                onclick="return confirm('Are you sure you want to cancel this appointment?')">
                                 Cancel
                             </a>
-                        <?php } else { echo "N/A"; } ?>
+                           
+                        <?php } else if ($row['status'] == 'Completed') { ?>
+                            <span class="text-success">Completed</span>
+                        <?php } else { ?>
+                            <span>N/A</span>
+                        <?php } ?>
                     </td>
                 </tr>
             <?php } ?>
             <?php if ($result->num_rows === 0) { ?>
                 <tr>
-                    <td colspan="6" class="text-center">No appointments found</td>
+                    <td colspan="5" class="text-center">No appointments found</td>
                 </tr>
             <?php } ?>
         </tbody>
     </table>
-
+    <h4>Completed Appointments</h4>
+    <table class="table table-bordered table-hover">
+        <thead class="table-success">
+            <tr>
+                <th>Doctor</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php $stmt->execute();
+            $result = $stmt->get_result();
+            while ($row = $result->fetch_assoc()) { 
+                if ($row['status'] == 'Completed') { ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
+                    <td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
+                    <td><?php echo htmlspecialchars($row['appointment_time']); ?></td>
+                    <td><span class="badge bg-success">Completed</span></td>
+                    <td>
+                        <a href="completed_payment_form.php?id=<?php echo $row['id']; ?>" class="btn btn-info btn-sm">
+                            Add Payment
+                        </a>
+                    </td>
+                </tr>
+            <?php } } ?>
+        </tbody>
+    </table>
+    
     <div class="text-center mt-4">
         <a href="book_appointment.php" class="btn btn-success btn-lg">Book New Appointment</a>
     </div>
