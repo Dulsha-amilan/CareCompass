@@ -2,6 +2,9 @@
 session_start();
 include 'db/config.php';
 
+// Initialize status message
+$statusMessage = "";
+
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Get form data
@@ -11,26 +14,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $rating = isset($_POST['rating']) ? $_POST['rating'] : null;
     $category = $_POST['category'];
     
-    // You'll need to have a users table or a way to get the user_id
-    // For a simple version, you could store the user's email in the users table and get the ID
-    
-    // Option 1: If user is logged in and you have the user_id in session
-    // $user_id = $_SESSION['user_id'];
-    
-    // Option 2: If you want to find or create a user based on email
+    // Get user ID by email (creates user if not exists)
     $user_id = getUserIdByEmail($conn, $email, $name);
     
     // Insert feedback into database
-    $sql = "INSERT INTO feedback (user_id, message, created_at) 
-            VALUES (?, ?, NOW())";
+    $sql = "INSERT INTO feedback (user_id, message) VALUES (?, ?)";
     
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("is", $user_id, $message);
     
-   
+    // Execute the statement and check for errors
+    if ($stmt->execute()) {
+        $statusMessage = "<div class='alert alert-success'>Thank you for your feedback!</div>";
+    } else {
+        $statusMessage = "<div class='alert alert-danger'>Error: " . $stmt->error . "</div>";
+    }
     
     $stmt->close();
-    $conn->close();
 }
 
 // Function to get user ID by email (creates user if not exists)
@@ -48,7 +48,7 @@ function getUserIdByEmail($conn, $email, $name) {
         return $row['id'];
     } else {
         // User doesn't exist, create new user
-        $sql = "INSERT INTO users (name, email, created_at) VALUES (?, ?, NOW())";
+        $sql = "INSERT INTO users (name, email) VALUES (?, ?)";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("ss", $name, $email);
         $stmt->execute();
@@ -157,6 +157,12 @@ function getUserIdByEmail($conn, $email, $name) {
         .rating-item.selected i {
             color: #ffc107;
         }
+        /* Add styling for success/error messages */
+        .alert {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            padding: 15px;
+        }
     </style>
 </head>
 <body>
@@ -167,6 +173,9 @@ function getUserIdByEmail($conn, $email, $name) {
                 <p>Please share your thoughts with us to help improve our services</p>
             </div>
             <div class="form-body">
+                <!-- Display status message -->
+                <?php echo $statusMessage; ?>
+                
                 <!-- Use the same file for form processing -->
                 <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
                     <div class="row">
@@ -188,7 +197,7 @@ function getUserIdByEmail($conn, $email, $name) {
                     
                     <div class="mb-4">
                         <label for="category" class="form-label">Feedback Category</label>
-                        <select class="form-control" id="category" name="category">
+                        <select class="form-control" id="category" name="category" required>
                             <option value="">Please select a category</option>
                             <option value="product">Product Quality</option>
                             <option value="service">Customer Service</option>

@@ -28,6 +28,10 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                     <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'manegappoiment admin.php' ? 'active' : ''; ?>" 
                        href="manegappoiment admin.php">Manage Appointments</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'manegappoiment admin.php' ? 'active' : ''; ?>" 
+                       href="Feedback_View_Page.php">User Feed Back</a>
+                </li>
               
             </ul>
             <ul class="navbar-nav">
