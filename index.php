@@ -60,7 +60,64 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error_message = "Invalid email or password!";
     }
 }
-
-// Include the login form
-include 'login_form.html';
 ?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Care Compass Hospitals</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets\css\login.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js"></script>
+</head>
+<style>
+        body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+            background: url('assets/pills-medical-tools-arrangement-flat-lay.jpg') no-repeat center center/cover;
+        }
+        </style>
+<body>
+    <div class="overlay"></div>
+
+    <div class="split-container">
+        <!-- Left Side (Animation) -->
+        <div class="left-side">
+            <div id="lottie-animation" style="width: 100%; height: 100%;"></div>
+        </div>
+
+        <!-- Right Side (Login Box) -->
+        <div class="right-side">
+            <div class="login-box">
+                <a href="staff_login.php" class="btn btn-outline-primary staff-login-btn">Staff Login</a>
+                <h3 class="text-center mb-3">Login</h3>
+
+                <?php if (!empty($error_message)) { ?>
+                    <div class="alert alert-danger"><?php echo $error_message; ?></div>
+                <?php } ?>
+
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                </form>
+
+                <p class="mt-3 text-center">Don't have an account? <a href="register.php">Register</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets\js\login.js"></script>
+</body>
+</html>

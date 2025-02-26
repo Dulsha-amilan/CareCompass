@@ -38,113 +38,10 @@ $recent_lab_reports = $stmt2->get_result();
     <title>Patient Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/owl-carousel/1.3.3/owl.carousel.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="assets\css\home.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/owl-carousel/1.3.3/owl.carousel.min.js"></script>
-    <style>
-        .banner {
-            width: 100%;
-            max-height: 400px;
-            overflow: hidden;
-        }
-        .banner img {
-            width: 100%;
-            height: auto;
-        }
-        .navbar-custom {
-            background-color: #007bff;
-            padding: 15px;
-        }
-        .navbar-custom .nav-link {
-            color: white !important;
-            font-size: 18px;
-            transition: 0.3s;
-        }
-        .navbar-custom .nav-link:hover {
-            color: #f8f9fa !important;
-            text-decoration: underline;
-        }
-        .navbar-brand {
-            font-size: 22px;
-            font-weight: bold;
-            color: white !important;
-        }
-        .dashboard-card {
-            transition: transform 0.2s;
-            height: 100%;
-        }
-        .dashboard-card:hover {
-            transform: translateY(-5px);
-        }
-        .section-heading {
-            position: relative;
-            padding-bottom: 10px;
-            margin-bottom: 25px;
-        }
-        .section-heading::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 50px;
-            height: 3px;
-            background-color: #007bff;
-        }
-        .footer {
-        background-color: #2c3e50;
-        color: #fff;
-        padding: 60px 0 30px;
-        margin-top: 50px;
-    }
-    .footer h5 {
-        color: #fff;
-        font-weight: 600;
-        margin-bottom: 20px;
-    }
-    .footer-links {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    .footer-links li {
-        margin-bottom: 10px;
-    }
-    .footer-links a {
-        color: #ecf0f1;
-        text-decoration: none;
-        transition: color 0.3s;
-    }
-    .footer-links a:hover {
-        color: #3498db;
-    }
-    .footer-contact i {
-        margin-right: 10px;
-        color: #3498db;
-    }
-    .footer-social a {
-        display: inline-block;
-        width: 35px;
-        height: 35px;
-        background-color: #34495e;
-        color: #fff;
-        text-align: center;
-        line-height: 35px;
-        border-radius: 50%;
-        margin-right: 10px;
-        transition: background-color 0.3s;
-    }
-    .footer-social a:hover {
-        background-color: #3498db;
-    }
-    .footer-bottom {
-        background-color: #233140;
-        padding: 20px 0;
-        margin-top: 40px;
-    }
-    .footer-bottom p {
-        margin: 0;
-        color: #bdc3c7;
-    }
-    </style>
 </head>
 <body>
 <!-- This is just the navigation section to be added to home.php -->
@@ -293,10 +190,8 @@ $recent_lab_reports = $stmt2->get_result();
     </div>
     
 </div>
-<!-- Add this link to the head section for FontAwesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-<!-- Add this footer section just before the closing body tag -->
+<!-- Footer Section -->
 <footer class="footer">
     <div class="container">
         <div class="row">
@@ -389,18 +284,7 @@ $recent_lab_reports = $stmt2->get_result();
     </div>
 </footer>
 
-<script>
-    $(document).ready(function() {
-        $("#banner-slider").owlCarousel({
-            autoPlay: 3000,
-            items: 1,
-            loop: true,
-            nav: false,
-            dots: true
-        });
-    });
-</script>
-
+<script src="assets\js\home.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
